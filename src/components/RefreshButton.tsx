@@ -10,18 +10,10 @@ interface RefreshButtonProps {
 const RefreshButton: React.FC<RefreshButtonProps> = ({ uid, onRefresh, isLoading }) => {
   const [timeLeft, setTimeLeft] = useState(0);
 
-  // Masquer si pas d'UID
-  if (!uid || uid === '000000000') {
-    return null;
-  }
-
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
-
   useEffect(() => {
+    // Si pas d'UID on ne fait rien
+    if (!uid || uid === '000000000') return;
+
     const checkTime = () => {
       const expiration = localStorage.getItem(`enka_cooldown_${uid}`);
       if (expiration) {
@@ -56,8 +48,19 @@ const RefreshButton: React.FC<RefreshButtonProps> = ({ uid, onRefresh, isLoading
     return () => window.removeEventListener('enkaRefreshed', handleRefreshed);
   }, [uid]);
 
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  // Masquer si pas d'UID (règle exécutée APRÈS les Hooks)
+  if (!uid || uid === '000000000') {
+    return null;
+  }
+
   return (
-    <button 
+    <button
       onClick={onRefresh}
       disabled={isLoading || timeLeft > 0 || uid === '999999999'}
       className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors text-sm font-medium

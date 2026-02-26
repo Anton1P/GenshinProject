@@ -10,9 +10,9 @@ interface BuildDashboardModalProps {
 // Helper to format stats
 const formatStatValue = (type: string, value: number) => {
   if (
-    type.includes('PERCENT') || 
-    type.includes('CRITICAL') || 
-    type.includes('EFFICIENCY') || 
+    type.includes('PERCENT') ||
+    type.includes('CRITICAL') ||
+    type.includes('EFFICIENCY') ||
     type.includes('ADD_HURT') ||
     type === 'FIGHT_PROP_HEAL_ADD'
   ) {
@@ -91,7 +91,7 @@ export const BuildDashboardModal: React.FC<BuildDashboardModalProps> = ({ charac
   // Sort artifacts by equipType to ensure consistent order (Flower, Feather, Sands, Goblet, Circlet)
   // Enka equipType: EQUIP_BRACER (Flower), EQUIP_NECKLACE (Feather), EQUIP_SHOES (Sands), EQUIP_RING (Goblet), EQUIP_DRESS (Circlet)
   const equipOrder = ['EQUIP_BRACER', 'EQUIP_NECKLACE', 'EQUIP_SHOES', 'EQUIP_RING', 'EQUIP_DRESS'];
-  
+
   const sortedArtifacts = [...artifacts].sort((a, b) => {
     return equipOrder.indexOf(a.equipType) - equipOrder.indexOf(b.equipType);
   });
@@ -99,10 +99,10 @@ export const BuildDashboardModal: React.FC<BuildDashboardModalProps> = ({ charac
   return (
     <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200 backdrop-blur-sm">
       <div className="bg-slate-950 rounded-2xl w-full max-w-6xl h-[90vh] border border-slate-800 relative overflow-hidden flex flex-col shadow-2xl">
-        
+
         {/* Close Button */}
-        <button 
-          onClick={onClose} 
+        <button
+          onClick={onClose}
           className="absolute top-4 right-4 z-50 p-2 bg-black/50 hover:bg-slate-800 rounded-full text-white transition-colors border border-white/10 backdrop-blur-md"
         >
           <X className="w-6 h-6" />
@@ -110,18 +110,18 @@ export const BuildDashboardModal: React.FC<BuildDashboardModalProps> = ({ charac
 
         <div className="flex-1 overflow-y-auto p-4 lg:p-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-            
+
             {/* LEFT COLUMN: Character Identity */}
             <div className="col-span-1 relative rounded-xl overflow-hidden border border-slate-800 bg-slate-900 group min-h-[400px]">
               {/* Background Image Effect */}
               <div className="absolute inset-0 bg-gradient-to-b from-slate-800/50 to-slate-950 z-0" />
-              <img 
-                src={character.icon} 
-                alt={character.name} 
-                className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700" 
+              <img
+                src={character.icon}
+                alt={character.name}
+                className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent z-10" />
-              
+
               {/* Content */}
               <div className="absolute bottom-0 left-0 right-0 p-8 z-20">
                 <div className="mb-2">
@@ -142,18 +142,18 @@ export const BuildDashboardModal: React.FC<BuildDashboardModalProps> = ({ charac
 
             {/* RIGHT COLUMN: Stats & Equipment */}
             <div className="col-span-1 lg:col-span-2 flex flex-col gap-6">
-              
+
               {/* WEAPON CARD */}
               {weapon && (
                 <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 flex items-center gap-6 relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-4 opacity-10">
                     <Sword className="w-32 h-32" />
                   </div>
-                  
+
                   <div className="relative z-10 w-24 h-24 shrink-0 bg-gradient-to-br from-slate-800 to-slate-900 rounded-lg border border-slate-700 flex items-center justify-center shadow-lg">
                     <img src={weapon.icon} alt="Weapon" className="w-20 h-20 object-contain" />
                   </div>
-                  
+
                   <div className="relative z-10 flex-1">
                     <div className="flex justify-between items-start mb-2">
                       <div>
@@ -167,7 +167,7 @@ export const BuildDashboardModal: React.FC<BuildDashboardModalProps> = ({ charac
                         R5 {/* Refinement placeholder */}
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4 mt-4">
                       {weapon.mainStat && (
                         <div className="bg-slate-950/50 rounded px-3 py-2 border border-slate-800">
@@ -178,12 +178,12 @@ export const BuildDashboardModal: React.FC<BuildDashboardModalProps> = ({ charac
                         </div>
                       )}
                       {weapon.subStats && weapon.subStats.length > 0 && (
-                         <div className="bg-slate-950/50 rounded px-3 py-2 border border-slate-800">
-                           <p className="text-xs text-slate-500 uppercase">{getStatName(weapon.subStats[0].type)}</p>
-                           <p className="text-lg font-mono font-bold text-white">
-                             {formatStatValue(weapon.subStats[0].type, weapon.subStats[0].value)}
-                           </p>
-                         </div>
+                        <div className="bg-slate-950/50 rounded px-3 py-2 border border-slate-800">
+                          <p className="text-xs text-slate-500 uppercase">{getStatName(weapon.subStats[0].type)}</p>
+                          <p className="text-lg font-mono font-bold text-white">
+                            {formatStatValue(weapon.subStats[0].type, weapon.subStats[0].value)}
+                          </p>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -204,15 +204,15 @@ export const BuildDashboardModal: React.FC<BuildDashboardModalProps> = ({ charac
                     er: 'FIGHT_PROP_CHARGE_EFFICIENCY',
                     em: 'FIGHT_PROP_ELEMENT_MASTERY'
                   };
-                  
+
                   const propType = typeMap[key];
                   if (!propType) return null;
 
                   const isCrit = key === 'cr' || key === 'cd';
-                  const highlightClass = isCrit 
-                    ? 'border-fuchsia-500/30 bg-fuchsia-500/5' 
+                  const highlightClass = isCrit
+                    ? 'border-fuchsia-500/30 bg-fuchsia-500/5'
                     : 'border-slate-800 bg-slate-900/50';
-                  
+
                   const textClass = isCrit ? 'text-fuchsia-300' : 'text-slate-300';
 
                   return (
@@ -227,7 +227,7 @@ export const BuildDashboardModal: React.FC<BuildDashboardModalProps> = ({ charac
                         {(() => {
                           const val = value as number;
                           if (key === 'cr' || key === 'cd' || key === 'er') {
-                             return `${Number(val).toFixed(1)}%`;
+                            return `${(Number(val) * 100).toFixed(1)}%`;
                           }
                           return Math.round(Number(val)).toLocaleString();
                         })()}
@@ -243,22 +243,22 @@ export const BuildDashboardModal: React.FC<BuildDashboardModalProps> = ({ charac
                   <Shield className="w-4 h-4 text-slate-400" />
                   <span className="text-sm font-bold uppercase tracking-wider text-slate-400">Artéfacts</span>
                 </div>
-                
+
                 {sortedArtifacts.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
                     {sortedArtifacts.map((artifact, index) => {
                       const cv = calculateCV(artifact.subStats);
                       const cvColorClass = getCVColorClass(cv);
-                      
+
                       return (
                         <div key={index} className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 relative overflow-hidden group hover:border-slate-600 transition-colors">
                           {/* Background Icon Watermark */}
-                          <img 
-                            src={artifact.icon} 
-                            alt="Artifact" 
-                            className="absolute -right-4 -top-4 w-24 h-24 opacity-20 pointer-events-none grayscale" 
+                          <img
+                            src={artifact.icon}
+                            alt="Artifact"
+                            className="absolute -right-4 -top-4 w-24 h-24 opacity-20 pointer-events-none grayscale"
                           />
-                          
+
                           {/* Header: Level & CV */}
                           <div className="flex justify-between items-start mb-3 relative z-10">
                             <span className="px-1.5 py-0.5 bg-slate-950 border border-slate-800 rounded text-[10px] font-mono text-slate-400">
