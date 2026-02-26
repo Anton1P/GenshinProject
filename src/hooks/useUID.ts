@@ -52,16 +52,71 @@ export const useUID = () => {
           weapon: {
             nameHash: 12345,
             level: 90,
-            icon: "https://enka.network/ui/UI_EquipIcon_Pole_TheCatch.png",
+            icon: "https://enka.network/ui/UI_EquipIcon_Pole_Mori.png",
             mainStat: { type: "FIGHT_PROP_CHARGE_EFFICIENCY", value: 45.9 },
             subStats: []
           },
           artifacts: [
-            { equipType: "EQUIP_BRACER", level: 20, icon: "https://enka.network/ui/UI_RelicIcon_15020_4.png", mainStat: { type: "FIGHT_PROP_HP", value: 4780 }, subStats: [] },
-            { equipType: "EQUIP_NECKLACE", level: 20, icon: "https://enka.network/ui/UI_RelicIcon_15020_2.png", mainStat: { type: "FIGHT_PROP_ATTACK", value: 311 }, subStats: [] },
-            { equipType: "EQUIP_SHOES", level: 20, icon: "https://enka.network/ui/UI_RelicIcon_15020_5.png", mainStat: { type: "FIGHT_PROP_CHARGE_EFFICIENCY", value: 51.8 }, subStats: [] },
-            { equipType: "EQUIP_RING", level: 20, icon: "https://enka.network/ui/UI_RelicIcon_15020_1.png", mainStat: { type: "FIGHT_PROP_ELEC_ADD_HURT", value: 46.6 }, subStats: [] },
-            { equipType: "EQUIP_DRESS", level: 20, icon: "https://enka.network/ui/UI_RelicIcon_15020_3.png", mainStat: { type: "FIGHT_PROP_CRITICAL", value: 31.1 }, subStats: [] }
+            { 
+              equipType: "EQUIP_BRACER", 
+              level: 20, 
+              icon: "https://enka.network/ui/UI_RelicIcon_15020_4.png", 
+              mainStat: { type: "FIGHT_PROP_HP", value: 4780 }, 
+              subStats: [
+                { type: "FIGHT_PROP_CRITICAL", value: 3.9 },
+                { type: "FIGHT_PROP_CRITICAL_HURT", value: 21.0 },
+                { type: "FIGHT_PROP_ATTACK_PERCENT", value: 5.8 },
+                { type: "FIGHT_PROP_ELEMENT_MASTERY", value: 23 }
+              ] 
+            },
+            { 
+              equipType: "EQUIP_NECKLACE", 
+              level: 20, 
+              icon: "https://enka.network/ui/UI_RelicIcon_15020_2.png", 
+              mainStat: { type: "FIGHT_PROP_ATTACK", value: 311 }, 
+              subStats: [
+                { type: "FIGHT_PROP_CRITICAL", value: 10.5 },
+                { type: "FIGHT_PROP_CRITICAL_HURT", value: 14.0 },
+                { type: "FIGHT_PROP_CHARGE_EFFICIENCY", value: 6.5 },
+                { type: "FIGHT_PROP_HP_PERCENT", value: 4.1 }
+              ] 
+            },
+            { 
+              equipType: "EQUIP_SHOES", 
+              level: 20, 
+              icon: "https://enka.network/ui/UI_RelicIcon_15020_5.png", 
+              mainStat: { type: "FIGHT_PROP_CHARGE_EFFICIENCY", value: 51.8 }, 
+              subStats: [
+                 { type: "FIGHT_PROP_CRITICAL", value: 7.0 },
+                 { type: "FIGHT_PROP_CRITICAL_HURT", value: 20.2 },
+                 { type: "FIGHT_PROP_ATTACK", value: 19 },
+                 { type: "FIGHT_PROP_DEFENSE_PERCENT", value: 12.4 }
+              ] 
+            },
+            { 
+              equipType: "EQUIP_RING", 
+              level: 20, 
+              icon: "https://enka.network/ui/UI_RelicIcon_15020_1.png", 
+              mainStat: { type: "FIGHT_PROP_ELEC_ADD_HURT", value: 46.6 }, 
+              subStats: [
+                { type: "FIGHT_PROP_CRITICAL", value: 10.1 },
+                { type: "FIGHT_PROP_CRITICAL_HURT", value: 13.2 },
+                { type: "FIGHT_PROP_ATTACK_PERCENT", value: 9.9 },
+                { type: "FIGHT_PROP_CHARGE_EFFICIENCY", value: 4.5 }
+              ] 
+            },
+            { 
+              equipType: "EQUIP_DRESS", 
+              level: 20, 
+              icon: "https://enka.network/ui/UI_RelicIcon_15020_3.png", 
+              mainStat: { type: "FIGHT_PROP_CRITICAL", value: 31.1 }, 
+              subStats: [
+                { type: "FIGHT_PROP_CRITICAL_HURT", value: 28.0 },
+                { type: "FIGHT_PROP_ATTACK_PERCENT", value: 5.3 },
+                { type: "FIGHT_PROP_CHARGE_EFFICIENCY", value: 11.0 },
+                { type: "FIGHT_PROP_DEFENSE", value: 39 }
+              ] 
+            }
           ]
         }
       ];

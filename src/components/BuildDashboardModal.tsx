@@ -57,6 +57,28 @@ const getStatIcon = (type: string) => {
   return <div className="w-4 h-4 rounded-full bg-slate-600" />;
 };
 
+// Helper to calculate Crit Value (CV)
+const calculateCV = (subStats: EquipStat[]): number => {
+  let cv = 0;
+  subStats.forEach(stat => {
+    if (stat.type === 'FIGHT_PROP_CRITICAL') {
+      cv += stat.value * 2;
+    } else if (stat.type === 'FIGHT_PROP_CRITICAL_HURT') {
+      cv += stat.value;
+    }
+  });
+  return parseFloat(cv.toFixed(1));
+};
+
+// Helper to get CV Color Class
+const getCVColorClass = (cv: number): string => {
+  if (cv >= 50) return 'text-rose-500 border-rose-500/50 bg-rose-500/10 shadow-[0_0_10px_rgba(244,63,94,0.3)]';
+  if (cv >= 40) return 'text-amber-400 border-amber-400/50 bg-amber-400/10';
+  if (cv >= 30) return 'text-fuchsia-400 border-fuchsia-400/50 bg-fuchsia-400/10';
+  if (cv >= 20) return 'text-blue-400 border-blue-400/50 bg-blue-400/10';
+  return 'text-slate-400 border-slate-600/50 bg-slate-600/10';
+};
+
 export const BuildDashboardModal: React.FC<BuildDashboardModalProps> = ({ character, onClose }) => {
   if (!character) return null;
 
@@ -64,22 +86,16 @@ export const BuildDashboardModal: React.FC<BuildDashboardModalProps> = ({ charac
   const detailedChar = character as any;
   const stats = detailedChar.stats || {};
   const weapon = character.weapon;
+  const artifacts = character.artifacts || [];
 
-  // Construct Splash Art URL (using Enka logic if avatarId is available)
-  // Note: Enka uses specific naming conventions. If we have avatarId, we can try to guess.
-  // Standard format: UI_Gacha_AvatarImg_PlayerBoy.png etc.
-  // For simplicity, we'll use the icon but try to find a better image source if possible or just scale the icon.
-  // Actually, Enka API usually provides 'costumeId' or we can derive from avatarId.
-  // Since we don't have a reliable map for Gacha images here without a huge dictionary, 
-  // we will use the icon but styled as a "card" or see if we can use a placeholder.
-  // BETTER: Use the icon but large and blurred background?
-  // OR: Just use the icon in a nice frame.
-  // The user suggested: "UI_Gacha_AvatarImg..." if possible.
-  // Let's try to construct it if we have the ID, but it requires a map name.
-  // We'll stick to a high-quality display of the icon for now to be safe, or use a known pattern if we had the map name.
+  // Sort artifacts by equipType to ensure consistent order (Flower, Feather, Sands, Goblet, Circlet)
+  // Enka equipType: EQUIP_BRACER (Flower), EQUIP_NECKLACE (Feather), EQUIP_SHOES (Sands), EQUIP_RING (Goblet), EQUIP_DRESS (Circlet)
+  const equipOrder = ['EQUIP_BRACER', 'EQUIP_NECKLACE', 'EQUIP_SHOES', 'EQUIP_RING', 'EQUIP_DRESS'];
   
-  // Let's assume we just use the icon for now but make it look good.
-  
+  const sortedArtifacts = [...artifacts].sort((a, b) => {
+    return equipOrder.indexOf(a.equipType) - equipOrder.indexOf(b.equipType);
+  });
+
   return (
     <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200 backdrop-blur-sm">
       <div className="bg-slate-950 rounded-2xl w-full max-w-6xl h-[90vh] border border-slate-800 relative overflow-hidden flex flex-col shadow-2xl">
@@ -96,7 +112,7 @@ export const BuildDashboardModal: React.FC<BuildDashboardModalProps> = ({ charac
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
             
             {/* LEFT COLUMN: Character Identity */}
-            <div className="col-span-1 relative rounded-xl overflow-hidden border border-slate-800 bg-slate-900 group">
+            <div className="col-span-1 relative rounded-xl overflow-hidden border border-slate-800 bg-slate-900 group min-h-[400px]">
               {/* Background Image Effect */}
               <div className="absolute inset-0 bg-gradient-to-b from-slate-800/50 to-slate-950 z-0" />
               <img 
@@ -208,22 +224,9 @@ export const BuildDashboardModal: React.FC<BuildDashboardModalProps> = ({ charac
                         </span>
                       </div>
                       <span className={`text-xl font-mono font-bold ${textClass}`}>
-                        {/* Special handling for simple keys if needed, but formatStatValue expects prop types */}
-                        {/* If values are already formatted in stats object, just display. 
-                            But usually they are raw numbers. 
-                            In debug data: cr: 100 (meaning 100%), cd: 374 (374%).
-                            In Enka real data: cr: 0.5 (50%).
-                            We need to be careful. 
-                            Let's assume debug data format for now or handle both?
-                            If value < 2 for CR/CD, it's likely decimal.
-                        */}
                         {(() => {
                           const val = value as number;
                           if (key === 'cr' || key === 'cd' || key === 'er') {
-                             // Heuristic: if < 2, assume decimal (e.g. 0.5 -> 50%)
-                             // But ER base is 1.0 (100%).
-                             // Debug data has 100 for CR.
-                             // Let's just append % for these keys.
                              return `${Number(val).toFixed(1)}%`;
                           }
                           return Math.round(Number(val)).toLocaleString();
@@ -234,19 +237,76 @@ export const BuildDashboardModal: React.FC<BuildDashboardModalProps> = ({ charac
                 })}
               </div>
 
-              {/* ARTIFACTS PLACEHOLDER (Phase 3) */}
+              {/* ARTIFACTS GRID */}
               <div className="mt-auto">
-                <div className="flex items-center gap-2 mb-4 opacity-50">
-                  <Shield className="w-4 h-4" />
-                  <span className="text-sm font-bold uppercase tracking-wider">Artéfacts (Phase 3)</span>
+                <div className="flex items-center gap-2 mb-4">
+                  <Shield className="w-4 h-4 text-slate-400" />
+                  <span className="text-sm font-bold uppercase tracking-wider text-slate-400">Artéfacts</span>
                 </div>
-                <div className="grid grid-cols-5 gap-2">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="aspect-square rounded-lg bg-slate-900/50 border border-slate-800 flex items-center justify-center">
-                      <div className="w-8 h-8 rounded-full bg-slate-800/50" />
-                    </div>
-                  ))}
-                </div>
+                
+                {sortedArtifacts.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+                    {sortedArtifacts.map((artifact, index) => {
+                      const cv = calculateCV(artifact.subStats);
+                      const cvColorClass = getCVColorClass(cv);
+                      
+                      return (
+                        <div key={index} className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 relative overflow-hidden group hover:border-slate-600 transition-colors">
+                          {/* Background Icon Watermark */}
+                          <img 
+                            src={artifact.icon} 
+                            alt="Artifact" 
+                            className="absolute -right-4 -top-4 w-24 h-24 opacity-20 pointer-events-none grayscale" 
+                          />
+                          
+                          {/* Header: Level & CV */}
+                          <div className="flex justify-between items-start mb-3 relative z-10">
+                            <span className="px-1.5 py-0.5 bg-slate-950 border border-slate-800 rounded text-[10px] font-mono text-slate-400">
+                              +{artifact.level}
+                            </span>
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${cvColorClass}`}>
+                              {cv} CV
+                            </span>
+                          </div>
+
+                          {/* Main Stat */}
+                          <div className="mb-3 relative z-10">
+                            <div className="flex items-center gap-1 mb-0.5">
+                              {getStatIcon(artifact.mainStat.type)}
+                              <span className="text-[10px] uppercase text-slate-500 truncate max-w-full">
+                                {getStatName(artifact.mainStat.type)}
+                              </span>
+                            </div>
+                            <div className="text-lg font-bold text-slate-200 leading-none">
+                              {formatStatValue(artifact.mainStat.type, artifact.mainStat.value)}
+                            </div>
+                          </div>
+
+                          {/* Sub Stats */}
+                          <div className="space-y-1 border-t border-slate-800/50 pt-2 relative z-10">
+                            {artifact.subStats.map((sub, idx) => {
+                              const isCrit = sub.type.includes('CRITICAL');
+                              return (
+                                <div key={idx} className="flex justify-between items-center text-xs">
+                                  <span className={`${isCrit ? 'text-slate-300' : 'text-slate-500'} truncate mr-2`}>
+                                    {getStatName(sub.type)}
+                                  </span>
+                                  <span className={`font-mono ${isCrit ? 'text-white font-bold' : 'text-slate-400'}`}>
+                                    {formatStatValue(sub.type, sub.value)}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 bg-slate-900/30 rounded-xl border border-dashed border-slate-800">
+                    <p className="text-slate-500 text-sm">Aucun artéfact équipé</p>
+                  </div>
+                )}
               </div>
 
             </div>
