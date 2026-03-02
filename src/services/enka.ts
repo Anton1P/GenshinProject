@@ -1,3 +1,5 @@
+import locData from '../data/loc_fr.json';
+
 // Mapping temporaire des IDs vers les noms
 // À compléter avec la liste exhaustive plus tard
 export const ENKA_AVATAR_MAP: Record<number, string> = {
@@ -194,10 +196,24 @@ export const parseEnkaCharacters = (avatarInfoList: any[]): DetailedCharacter[] 
           const flat = equip.flat;
           if (!flat) return;
 
+          // ... (in the mapping loop)
           if (flat.itemType === 'ITEM_WEAPON') {
+
+            // Refinement formula: find the first value in affixMap and add 1 (since 0-based in game files usually, or exact value provided by Enka)
+            // Enka usually provides the promoteLevel as well. affixMap contains the exact refinement (0 = R1)
+            let refinement = 1;
+            if (equip.weapon?.affixMap) {
+              const affixValues = Object.values(equip.weapon.affixMap);
+              if (affixValues.length > 0) {
+                refinement = (affixValues[0] as number) + 1;
+              }
+            }
+
             weaponData = {
-              nameHash: flat.nameTextMapHash,
+              name: (locData as any)[flat.nameTextMapHash] || flat.nameTextMapHash.toString(),
               level: equip.weapon?.level || 1,
+              rank: flat.rankLevel || 5,
+              refinement: refinement,
               icon: `https://enka.network/ui/${flat.icon}.png`,
               mainStat: flat.weaponStats?.[0] ? { type: flat.weaponStats[0].appendPropId, value: flat.weaponStats[0].statValue } : undefined,
               subStats: flat.weaponStats?.slice(1).map((s: any) => ({ type: s.appendPropId, value: s.statValue })) || []

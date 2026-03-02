@@ -10,8 +10,10 @@ export interface EquipStat {
 }
 
 export interface WeaponData {
-  nameHash: number;
+  name: string;
   level: number;
+  rank: number;
+  refinement: number;
   icon: string;
   mainStat?: EquipStat;
   subStats?: EquipStat[];
