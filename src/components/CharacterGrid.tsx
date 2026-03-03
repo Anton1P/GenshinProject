@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import CharacterCard from './CharacterCard';
 import { Character, UserBox } from '../types';
-import { Sparkles, Database } from 'lucide-react';
+import { Sparkles, Database, ChevronDown, ChevronUp } from 'lucide-react';
+
+const LAB_INITIAL_COUNT = 18;
 
 interface CharacterGridProps {
   characters: Character[];
@@ -22,6 +24,7 @@ const CharacterGrid: React.FC<CharacterGridProps> = ({
   detailedRoster = [],
   onViewBuild
 }) => {
+  const [isLabExpanded, setIsLabExpanded] = useState(false);
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -40,7 +43,7 @@ const CharacterGrid: React.FC<CharacterGridProps> = ({
 
   // Split characters into showcase and others
   const showcaseNames = new Set(detailedRoster.map((c: any) => c.name.toLowerCase()));
-  
+
   const showcaseCharacters = characters.filter(char => showcaseNames.has(char.name.toLowerCase()));
   const otherCharacters = characters.filter(char => !showcaseNames.has(char.name.toLowerCase()));
 
@@ -57,13 +60,13 @@ const CharacterGrid: React.FC<CharacterGridProps> = ({
             {showcaseCharacters.map((char) => {
               const detail = detailedRoster.find((c: any) => c.name.toLowerCase() === char.name.toLowerCase());
               // Explicitly merge weapon and artifacts to ensure they are passed down
-              const enrichedChar = detail ? { 
-                ...char, 
+              const enrichedChar = detail ? {
+                ...char,
                 ...detail,
                 weapon: detail.weapon,
                 artifacts: detail.artifacts
               } : char;
-              
+
               return (
                 <CharacterCard
                   key={char.id}
@@ -81,13 +84,13 @@ const CharacterGrid: React.FC<CharacterGridProps> = ({
 
       {/* Other Characters Section */}
       {otherCharacters.length > 0 && (
-        <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">
+        <div id="lab-section" className="animate-in fade-in slide-in-from-bottom-8 duration-700">
           <div className="flex items-center gap-2 mb-4 border-b border-slate-800/60 pb-2">
             <Database className="w-4 h-4 text-slate-500" />
             <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Mode Laboratoire (Saisie Manuelle)</h3>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {otherCharacters.map((char) => (
+            {(isLabExpanded ? otherCharacters : otherCharacters.slice(0, LAB_INITIAL_COUNT)).map((char) => (
               <CharacterCard
                 key={char.id}
                 character={char}
@@ -97,6 +100,34 @@ const CharacterGrid: React.FC<CharacterGridProps> = ({
               />
             ))}
           </div>
+
+          {/* Bouton "Voir plus" / "Voir moins" */}
+          {otherCharacters.length > LAB_INITIAL_COUNT && (
+            <div className="flex justify-center mt-6">
+              {!isLabExpanded ? (
+                <button
+                  onClick={() => setIsLabExpanded(true)}
+                  className="group flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-800/60 border border-slate-700/50 text-slate-300 text-sm font-semibold hover:bg-slate-700/60 hover:border-slate-600/60 hover:text-white transition-all duration-300 cursor-pointer"
+                >
+                  Afficher tout le roster ({otherCharacters.length} personnages)
+                  <ChevronDown className="w-4 h-4 transition-transform duration-300 group-hover:translate-y-0.5" />
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setIsLabExpanded(false);
+                    setTimeout(() => {
+                      document.getElementById('lab-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }, 50);
+                  }}
+                  className="group flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-800/60 border border-slate-700/50 text-slate-300 text-sm font-semibold hover:bg-slate-700/60 hover:border-slate-600/60 hover:text-white transition-all duration-300 cursor-pointer"
+                >
+                  Réduire le roster
+                  <ChevronUp className="w-4 h-4 transition-transform duration-300 group-hover:-translate-y-0.5" />
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
