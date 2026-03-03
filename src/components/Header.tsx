@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { RefreshCw, User, Link, Key, Menu, X, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import ModelSelector from './ModelSelector';
+import { ModelInfo } from '../services/gemini';
 
 interface HeaderProps {
   builtCount: number;
@@ -11,18 +13,27 @@ interface HeaderProps {
   setApiKey: (key: string) => void;
   isValidating: boolean;
   keyStatus: 'idle' | 'valid' | 'invalid';
+  // Model selector
+  selectedModel: string;
+  setSelectedModel: (model: string) => void;
+  availableModels: ModelInfo[];
+  isLoadingModels: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ 
-  builtCount, 
-  ownedCount, 
-  totalCharacters, 
-  uid, 
+const Header: React.FC<HeaderProps> = ({
+  builtCount,
+  ownedCount,
+  totalCharacters,
+  uid,
   onOpenWelcomeModal,
   apiKey,
   setApiKey,
   isValidating,
-  keyStatus
+  keyStatus,
+  selectedModel,
+  setSelectedModel,
+  availableModels,
+  isLoadingModels
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -33,14 +44,14 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full bg-slate-950/80 backdrop-blur-md border-b border-slate-800 z-50 shadow-md">
+    <header className="fixed top-0 left-0 w-full bg-slate-950/80 backdrop-blur-md border-b border-slate-800 z-50 shadow-md overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           {/* Logo / Title */}
           <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent flex-shrink-0">
             Genshin Theorycraft Box
           </h1>
-          
+
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-4 flex-1 justify-end">
             {/* Stats */}
@@ -80,6 +91,17 @@ const Header: React.FC<HeaderProps> = ({
               </div>
             </div>
 
+            {/* Model Selector */}
+            <div className="w-40 lg:w-48">
+              <ModelSelector
+                selectedModel={selectedModel}
+                setSelectedModel={setSelectedModel}
+                availableModels={availableModels}
+                isLoadingModels={isLoadingModels}
+                compact
+              />
+            </div>
+
             {/* UID Button */}
             <button
               onClick={onOpenWelcomeModal}
@@ -105,7 +127,7 @@ const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Mobile Menu Button */}
-          <button 
+          <button
             className="md:hidden p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
@@ -152,6 +174,14 @@ const Header: React.FC<HeaderProps> = ({
                 ) : null}
               </div>
             </div>
+
+            {/* Model Selector */}
+            <ModelSelector
+              selectedModel={selectedModel}
+              setSelectedModel={setSelectedModel}
+              availableModels={availableModels}
+              isLoadingModels={isLoadingModels}
+            />
 
             {/* UID Button */}
             <button

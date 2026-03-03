@@ -10,11 +10,11 @@ export const useGemini = () => {
   const [loadingPhrase, setLoadingPhrase] = useState(LOADING_PHRASES[0]);
   const [seconds, setSeconds] = useState(0);
   const [progress, setProgress] = useState(0);
-  
+
   const [teamDetails, setTeamDetails] = useState<BuildResponse | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [buildsCache, setBuildsCache] = useState<Record<string, BuildResponse>>({});
-  
+
   const [modalLoadingPhrase, setModalLoadingPhrase] = useState(LOADING_PHRASES[0]);
   const [modalProgress, setModalProgress] = useState(0);
 
@@ -106,7 +106,7 @@ export const useGemini = () => {
     };
   }, [isLoadingDetails, teamDetails]);
 
-  const handleGenerateTeams = async (apiKey: string, query: string, builtChars: string[], ownedChars: string[]) => {
+  const handleGenerateTeams = async (apiKey: string, query: string, builtChars: string[], ownedChars: string[], model: string) => {
     setError(null);
     setTeamsResult(null);
     setBuildsCache({});
@@ -120,8 +120,8 @@ export const useGemini = () => {
 
     try {
       const prompt = `Agis en tant qu'expert Genshin Impact. Voici la requête du joueur : ${query}. Voici les personnages qu'il possède et qui sont bien optimisés : ${builtChars.join(', ')}. Voici les personnages possédés mais non optimisés : ${ownedChars.join(', ')}. Tu dois PROPOSER EXACTEMENT 4 ÉQUIPES, classées de la meilleure (1ère) à la moins bonne (4ème). Structure ton JSON ainsi : { "teams": [ { "rank": 1, "name": "...", "characters": ["Perso1", "Perso2", "Perso3", "Perso4"], "explanation": "...", "rotation": "..." }, ... ] }. Tu DOIS répondre UNIQUEMENT avec un objet JSON valide, sans markdown.`;
-      
-      const result = await generateTeams(apiKey, prompt);
+
+      const result = await generateTeams(apiKey, prompt, model);
       setTeamsResult(result);
     } catch (err: any) {
       console.error("Erreur lors de la génération:", err);
@@ -131,7 +131,7 @@ export const useGemini = () => {
     }
   };
 
-  const handleGetTeamDetails = async (apiKey: string, team: Team) => {
+  const handleGetTeamDetails = async (apiKey: string, team: Team, model: string) => {
     setError(null);
     setTeamDetails(null);
 
@@ -150,7 +150,7 @@ export const useGemini = () => {
     try {
       const prompt = `Agis en tant qu'expert Genshin. Pour cette équipe nommée '${team.name}' composée de ${team.characters.join(', ')}, donne le build optimal pour chaque personnage. RÉPONDS INTÉGRALEMENT EN FRANÇAIS. Utilise STRICTEMENT les noms officiels français du jeu Genshin Impact pour les armes, les sets d'artéfacts et les statistiques (ex: 'Bâton de Homa', 'Emblème du destin brisé', 'Taux CRIT', 'Recharge d'Énergie'). N'utilise AUCUN terme en anglais. Tu dois fournir EXACTEMENT 4 options d'armes par personnage, classées de la plus performante à la moins performante. Tu peux proposer du 5★, du 4★, et même du 3★ si c'est très performant (ex: Pampille Blanche). Pour le paramètre 'type' des armes, utilise UNIQUEMENT ces mots-clés : 'Signature', 'Alternative payante', 'Craftable', 'Alternative', 'F2P'. Ajoute un champ 'explanation' (80 mots max) expliquant brièvement tes choix pour ce personnage. Structure JSON : { "builds": [ { "character": "...", "explanation": "...", "weapons": [ { "name": "...", "rarity": 5, "type": "Signature" }, ... ], "artifactSet": "...", "sands": "...", "goblet": "...", "circlet": "...", "substats": ["..."] } ] }. Tu DOIS répondre UNIQUEMENT avec un objet JSON valide, sans markdown.`;
 
-      const details = await generateTeamDetails(apiKey, prompt);
+      const details = await generateTeamDetails(apiKey, prompt, model);
       setTeamDetails(details);
       setBuildsCache(prev => ({ ...prev, [team.name]: details }));
       return details;
@@ -167,7 +167,7 @@ export const useGemini = () => {
     setTeamDetails(null);
   };
 
-  const handleCharacterAudit = async (apiKey: string, characterName: string, equipList: any[], stats?: Record<string, any>, previousStats?: any) => {
+  const handleCharacterAudit = async (apiKey: string, characterName: string, equipList: any[], stats?: Record<string, any>, previousStats?: any, model?: string) => {
     setError(null);
     setIsAuditing(true);
     setAuditResult(null);
@@ -179,7 +179,7 @@ export const useGemini = () => {
     }
 
     try {
-      const result = await generateCharacterAudit(apiKey, characterName, equipList, stats, previousStats);
+      const result = await generateCharacterAudit(apiKey, characterName, equipList, stats, previousStats, model);
       setAuditResult(result);
     } catch (err: any) {
       console.error("Erreur audit:", err);

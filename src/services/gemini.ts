@@ -1,27 +1,123 @@
 import { GoogleGenAI } from "@google/genai";
 import { TeamResponse, BuildResponse, AuditResult } from "../types/ai-types";
 
+export interface ModelInfo {
+  id: string;
+  name: string;
+}
+
+export const fetchAvailableModels = async (apiKey: string): Promise<ModelInfo[]> => {
+  const BLACKLIST = ['tts', 'audio', 'vision', 'image', 'nano banana', 'exp', 'preview', 'embedding', 'aqa', 'bisheng'];
+  const WHITELIST_IDS = ['gemini-3-flash-preview']; // Bypass blacklist for these exact IDs
+
+  /** Performance tier score — higher = better model */
+  const getModelScore = (id: string): number => {
+    const lower = id.toLowerCase();
+    // Gemini 3 Flash family (top tier)
+    if (lower.includes('gemini-3') && lower.includes('flash') && !lower.includes('lite')) return 900;
+    // Gemini 2.5 Flash
+    if (lower.includes('2.5') && lower.includes('flash') && !lower.includes('lite')) return 800;
+    // Gemini 2.0 Flash
+    if (lower.includes('2.0') && lower.includes('flash') && !lower.includes('lite')) return 700;
+    // Gemini 1.5 Flash
+    if (lower.includes('1.5') && lower.includes('flash') && !lower.includes('lite')) return 600;
+    // Flash Lite (any version)
+    if (lower.includes('flash') && lower.includes('lite')) return 500;
+    // Gemma 3 27B
+    if (lower.includes('gemma') && lower.includes('27b')) return 400;
+    // Gemma 3 12B
+    if (lower.includes('gemma') && lower.includes('12b')) return 350;
+    // Gemma 3 4B
+    if (lower.includes('gemma') && lower.includes('4b')) return 300;
+    // Gemma 3 1B/2B
+    if (lower.includes('gemma') && (lower.includes('1b') || lower.includes('2b'))) return 200;
+    // Gemma other
+    if (lower.includes('gemma')) return 250;
+    // Generic flash
+    if (lower.includes('flash')) return 550;
+    return 100;
+  };
+
+  /** Clean up display name for UI */
+  const cleanDisplayName = (name: string, id: string): string => {
+    // Special rename for whitelisted preview models
+    if (id.includes('gemini-3-flash-preview')) return 'Gemini 3 Flash';
+    return name
+      .replace(/-latest$/i, '')
+      .replace(/\s*latest$/i, '')
+      .replace(/[-\s]?001$/i, '')
+      .replace(/[-\s]?002$/i, '')
+      .trim();
+  };
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+    if (!res.ok) throw new Error('Failed to fetch models');
+    const data = await res.json();
+
+    const result = (data.models || [])
+      .filter((m: any) => {
+        if (!m.supportedGenerationMethods?.includes('generateContent')) return false;
+        const id = (m.name || '').replace('models/', '').toLowerCase();
+        // Absolute whitelist bypass — skip all other checks
+        if (WHITELIST_IDS.some(wl => id === wl)) return true;
+        // Whitelist: must be flash, lite, or gemma
+        const isAllowed = id.includes('flash') || id.includes('lite') || id.includes('gemma');
+        if (!isAllowed) return false;
+        // Blacklist: reject any model containing banned keywords
+        if (BLACKLIST.some(term => id.includes(term))) return false;
+        // Exclude pro/ultra
+        if (id.includes('pro') || id.includes('ultra')) return false;
+        return true;
+      })
+      .map((m: any) => {
+        const modelId = m.name.replace('models/', '');
+        return {
+          id: modelId,
+          name: cleanDisplayName(m.displayName || modelId, modelId),
+        };
+      })
+      // Deduplicate by cleaned name (keep highest-scoring variant)
+      .reduce((acc: ModelInfo[], model: ModelInfo) => {
+        const existing = acc.find(m => m.name === model.name && m.id !== model.id);
+        if (!existing) {
+          acc.push(model);
+        } else if (getModelScore(model.id) > getModelScore(existing.id)) {
+          const idx = acc.indexOf(existing);
+          acc[idx] = model;
+        }
+        return acc;
+      }, [] as ModelInfo[])
+      .sort((a: ModelInfo, b: ModelInfo) => getModelScore(b.id) - getModelScore(a.id));
+
+    return result;
+  } catch (error) {
+    console.error('Error fetching models:', error);
+    return [];
+  }
+};
+
 const handleGeminiError = (error: any): never => {
   const errorMessage = error?.message?.toLowerCase() || '';
-  
+
   if (
-    errorMessage.includes('429') || 
-    errorMessage.includes('quota') || 
-    errorMessage.includes('too many requests') || 
+    errorMessage.includes('429') ||
+    errorMessage.includes('quota') ||
+    errorMessage.includes('too many requests') ||
     errorMessage.includes('rate limit')
   ) {
     throw new Error("L'IA de Teyvat doit se reposer quelques secondes. Veuillez patienter avant de relancer une analyse.");
   }
-  
+
   throw error;
 };
 
-export const generateTeams = async (apiKey: string, prompt: string): Promise<TeamResponse> => {
+export const generateTeams = async (apiKey: string, prompt: string, model: string): Promise<TeamResponse> => {
   try {
     const ai = new GoogleGenAI({ apiKey });
-    
+
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -39,12 +135,12 @@ export const generateTeams = async (apiKey: string, prompt: string): Promise<Tea
   }
 };
 
-export const generateTeamDetails = async (apiKey: string, prompt: string): Promise<BuildResponse> => {
+export const generateTeamDetails = async (apiKey: string, prompt: string, model: string): Promise<BuildResponse> => {
   try {
     const ai = new GoogleGenAI({ apiKey });
-    
+
     const response = await ai.models.generateContent({
-      model: "gemini-3.1-pro-preview",
+      model,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -67,7 +163,7 @@ export const formatEquipForAI = (equipList: any[], stats?: Record<string, any>) 
   const equipText = equipList.map(equip => {
     const flat = equip.flat;
     if (!flat) return null;
-    
+
     if (flat.itemType === "ITEM_WEAPON") {
       return `Arme: ${flat.nameTextMapHash} (Lvl ${equip.weapon?.level})`;
     } else if (flat.itemType === "ITEM_RELIQUARY") {
@@ -85,11 +181,11 @@ export const formatEquipForAI = (equipList: any[], stats?: Record<string, any>) 
   return `${equipText}. ${statsText}`;
 };
 
-export const generateCharacterAudit = async (apiKey: string, characterName: string, equipList: any[], stats?: Record<string, any>, previousStats?: any): Promise<AuditResult> => {
+export const generateCharacterAudit = async (apiKey: string, characterName: string, equipList: any[], stats?: Record<string, any>, previousStats?: any, model?: string): Promise<AuditResult> => {
   try {
     const ai = new GoogleGenAI({ apiKey });
     const formattedData = formatEquipForAI(equipList, stats);
-    
+
     let prompt;
 
     if (previousStats) {
@@ -170,7 +266,7 @@ Règles :
     }
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: model || 'gemini-2.5-flash',
       contents: prompt,
       config: {
         responseMimeType: "application/json",

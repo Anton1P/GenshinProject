@@ -13,6 +13,7 @@ import { useAuditFavorites } from './hooks/useAuditFavorites';
 import { useUID } from './hooks/useUID';
 import { useUserBox } from './hooks/useUserBox';
 import { useApiKey } from './hooks/useApiKey';
+import { useModelSelector } from './hooks/useModelSelector';
 import { Team, BuildResponse } from './types/ai-types';
 import { TeamDetailsModal } from './components/TeamDetailsModal';
 import { BuildDashboardModal } from './components/BuildDashboardModal';
@@ -31,6 +32,7 @@ function App() {
 
   // Lifted hooks
   const { apiKey, setApiKey, isValidating, keyStatus } = useApiKey();
+  const { selectedModel, setSelectedModel, availableModels, isLoadingModels } = useModelSelector(apiKey);
   const gemini = useGemini();
   const uidHook = useUID();
   const favorites = useFavorites(uidHook.uid);
@@ -72,20 +74,20 @@ function App() {
     if (detailedRoster) {
       // If guest mode (empty array returned), box remains empty (handled by hook reset).
       // If valid profile, fill box.
-      
+
       if (detailedRoster.length > 0) {
         // We need to update the box for the NEW UID.
         // Since state updates are async, we can't rely on 'userBox' being the new one yet.
         // However, we can construct the new state and set it.
         // The hook will also try to load from storage, but our update should win or merge.
-        
+
         // To be safe and robust: Read current storage for this UID, merge, and set.
         const storageKey = `genshin_box_${uid}`;
         const saved = localStorage.getItem(storageKey);
         const existingBox = saved ? JSON.parse(saved) : {};
-        
+
         const newUserBox = { ...existingBox };
-        
+
         detailedRoster.forEach(char => {
           // Find character ID by name
           const character = characters.find(c => c.name.toLowerCase() === char.name.toLowerCase());
@@ -93,10 +95,10 @@ function App() {
             newUserBox[character.id] = { isOwned: true, isBuilt: true };
           }
         });
-        
+
         setUserBox(newUserBox);
       }
-      
+
       setShowWelcome(false);
     }
   };
@@ -121,7 +123,7 @@ function App() {
   // Modal handlers
   const onSelectTeam = (team: Team) => {
     setSelectedTeam(team);
-    gemini.handleGetTeamDetails(apiKey, team);
+    gemini.handleGetTeamDetails(apiKey, team, selectedModel);
   };
 
   const onCloseModal = () => {
@@ -140,7 +142,7 @@ function App() {
       gemini.setTeamDetails(buildData);
     } else {
       // Generate build if missing and save it
-      const details = await gemini.handleGetTeamDetails(apiKey, team);
+      const details = await gemini.handleGetTeamDetails(apiKey, team, selectedModel);
       if (details) {
         favorites.saveBuildToTeam(team, details);
       }
@@ -171,8 +173,8 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white font-sans selection:bg-purple-500 selection:text-white pt-16">
-      <Header 
+    <div className="min-h-screen bg-slate-950 text-white font-sans selection:bg-purple-500 selection:text-white pt-16 overflow-x-hidden">
+      <Header
         builtCount={builtCount}
         ownedCount={ownedCount}
         totalCharacters={characters.length}
@@ -182,13 +184,17 @@ function App() {
         setApiKey={setApiKey}
         isValidating={isValidating}
         keyStatus={keyStatus}
+        selectedModel={selectedModel}
+        setSelectedModel={setSelectedModel}
+        availableModels={availableModels}
+        isLoadingModels={isLoadingModels}
       />
 
       <div className="w-full bg-slate-900/50 border-b border-slate-800 mb-8">
         <div className="max-w-7xl mx-auto">
           {/* Conteneur principal des filtres et du bouton avec marge réduite */}
           <div className="flex flex-col md:flex-row justify-between items-center w-full mb-6 gap-4 px-4">
-            
+
             {/* Zone des filtres d'éléments (centrée sur mobile, à gauche sur desktop) */}
             <div className="flex flex-wrap justify-center md:justify-start gap-2 flex-1">
               <FilterBar selectedElement={filter} onSelectElement={handleFilterSelect} />
@@ -221,22 +227,20 @@ function App() {
               <div className="bg-slate-900/80 p-1 rounded-xl border border-white/10 flex flex-wrap justify-center gap-2 backdrop-blur-sm w-full md:w-auto">
                 <button
                   onClick={() => setActiveTab('generator')}
-                  className={`px-4 py-2 md:px-6 md:py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 flex-1 md:flex-none justify-center whitespace-nowrap ${
-                    activeTab === 'generator'
-                      ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25'
-                      : 'text-slate-400 hover:text-white hover:bg-white/5'
-                  }`}
+                  className={`px-4 py-2 md:px-6 md:py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 flex-1 md:flex-none justify-center whitespace-nowrap ${activeTab === 'generator'
+                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25'
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    }`}
                 >
                   <Sparkles className="w-4 h-4" />
                   Générateur
                 </button>
                 <button
                   onClick={() => setActiveTab('favorites')}
-                  className={`px-4 py-2 md:px-6 md:py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 flex-1 md:flex-none justify-center whitespace-nowrap ${
-                    activeTab === 'favorites'
-                      ? 'bg-yellow-500 text-slate-900 shadow-lg shadow-yellow-500/25'
-                      : 'text-slate-400 hover:text-white hover:bg-white/5'
-                  }`}
+                  className={`px-4 py-2 md:px-6 md:py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 flex-1 md:flex-none justify-center whitespace-nowrap ${activeTab === 'favorites'
+                    ? 'bg-yellow-500 text-slate-900 shadow-lg shadow-yellow-500/25'
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    }`}
                 >
                   <Star className="w-4 h-4" />
                   Favoris
@@ -248,11 +252,10 @@ function App() {
                 </button>
                 <button
                   onClick={() => setActiveTab('audit')}
-                  className={`px-4 py-2 md:px-6 md:py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 flex-1 md:flex-none justify-center whitespace-nowrap ${
-                    activeTab === 'audit'
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25'
-                      : 'text-slate-400 hover:text-white hover:bg-white/5'
-                  }`}
+                  className={`px-4 py-2 md:px-6 md:py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 flex-1 md:flex-none justify-center whitespace-nowrap ${activeTab === 'audit'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25'
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    }`}
                 >
                   <BrainCircuit className="w-4 h-4" />
                   Coach IA
@@ -262,13 +265,14 @@ function App() {
 
             {/* Views */}
             {activeTab === 'generator' ? (
-              <AISection 
-                characters={characters} 
+              <AISection
+                characters={characters}
                 userBox={userBox}
+                detailedRoster={uidHook.detailedRoster}
                 apiKey={apiKey}
                 // Pass hook values
                 {...gemini}
-                handleGenerateTeams={(q, b, o) => gemini.handleGenerateTeams(apiKey, q, b, o)}
+                handleGenerateTeams={(q, b, o) => gemini.handleGenerateTeams(apiKey, q, b, o, selectedModel)}
                 // Pass favorites values
                 {...favorites}
                 // Pass interaction handlers
@@ -277,7 +281,7 @@ function App() {
                 getRankBorder={getRankBorder}
               />
             ) : activeTab === 'favorites' ? (
-              <FavoritesView 
+              <FavoritesView
                 favorites={favorites.favorites}
                 savedAudits={savedAudits}
                 characters={characters}
@@ -288,12 +292,12 @@ function App() {
                 getRankBorder={getRankBorder}
               />
             ) : (
-              <AuditView 
+              <AuditView
                 uid={uidHook.uid}
                 detailedRoster={uidHook.detailedRoster}
                 characters={characters}
                 onOpenWelcomeModal={() => setShowWelcome(true)}
-                onAudit={gemini.handleCharacterAudit}
+                onAudit={(key, name, equips, stats, prev) => gemini.handleCharacterAudit(key, name, equips, stats, prev, selectedModel)}
                 auditResult={gemini.auditResult}
                 isAuditing={gemini.isAuditing}
                 apiKey={apiKey}
@@ -325,7 +329,7 @@ function App() {
           onClose={() => setSelectedBuildChar(null)}
         />
       )}
-      
+
       {(gemini.isGenerating || gemini.isLoadingDetails) && <div className="fixed inset-0 z-[100] cursor-wait" aria-hidden="true" />}
 
       <WelcomeModal
