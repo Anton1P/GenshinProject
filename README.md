@@ -10,7 +10,7 @@
 ### 🔄 Importation Dynamique de Compte (Enka Network)
 Fini la saisie manuelle interminable. Entrez simplement votre UID Genshin Impact, et l'application récupérera automatiquement les statistiques, les armes, les artéfacts et l'avancement de vos personnages mis en "Vitrine" via l'API Enka Network.
 
-![Aperçu de l'importation Enka](./docs/accueil.png) <!-- Placeholder d'import -->
+![Aperçu de l'importation Enka](./docs/Accueil.png) <!-- Placeholder d'import -->
 
 ### 🧠 Système d'IA Fiabilisé par RAG Local
 L'IA ne devine pas, elle sait. Le projet embarque une base de données de connaissances vectorielle locale (RAG) ultra-légère regroupant toutes les données mathématiques et mécaniques officielles de plus de 100 personnages. **Fini les hallucinations : l'IA base son theorycrafting sur les vraies descriptions des compétences, passifs et constellations du jeu.**
