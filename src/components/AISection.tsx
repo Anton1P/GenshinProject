@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Character, UserBox } from '../types';
-import { Sparkles, AlertCircle, CheckCircle2, Medal, Loader2, Info, CheckCircle, Star } from 'lucide-react';
+import { Sparkles, AlertCircle, CheckCircle2, Medal, Loader2, Info, CheckCircle, Star, HelpCircle } from 'lucide-react';
 import { Team, BuildResponse } from '../types/ai-types';
 import { formatTime } from '../utils/ai-helpers';
 import AIPromptHelper from './AIPromptHelper';
@@ -50,6 +50,9 @@ const AISection: React.FC<AISectionProps> = ({
   const [query, setQuery] = useState('');
   const resultsRef = useRef<HTMLDivElement>(null);
 
+  const LANGUAGES = ['FR', 'EN', 'DE', 'ES', 'IT'];
+  const [selectedLang, setSelectedLang] = useState('FR');
+
   const onGenerate = async () => {
     const builtChars = characters
       .filter(c => userBox[c.id]?.isOwned && userBox[c.id]?.isBuilt)
@@ -59,7 +62,8 @@ const AISection: React.FC<AISectionProps> = ({
       .filter(c => userBox[c.id]?.isOwned && !userBox[c.id]?.isBuilt)
       .map(c => c.name);
 
-    await handleGenerateTeams(query, builtChars, ownedChars);
+    const langInstruction = `\n\nRÈGLE ABSOLUE : Tu dois rédiger l'intégralité de ta réponse dans cette langue : ${selectedLang}.`;
+    await handleGenerateTeams(query + langInstruction, builtChars, ownedChars);
 
     // Scroll impératif après la génération
     setTimeout(() => {
@@ -75,25 +79,55 @@ const AISection: React.FC<AISectionProps> = ({
   return (
     <>
       <div className={`mt-8 bg-slate-900/50 p-6 rounded-xl border border-white/10 backdrop-blur-sm max-w-4xl mx-auto transition-opacity duration-300 ${isGenerating ? 'opacity-90 pointer-events-none' : 'opacity-100'}`}>
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-purple-300">
-          <Sparkles className="w-5 h-5" />
-          Assistant IA Theorycraft
-        </h2>
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+          <h2 className="text-xl font-bold flex items-center gap-2 text-purple-300">
+            <Sparkles className="w-5 h-5" />
+            Assistant IA Theorycraft
+          </h2>
+          {/* Language Segmented Control */}
+          <div className="relative flex bg-slate-800/50 p-1 rounded-lg border border-slate-700">
+            {/* Animated slider */}
+            <div
+              className="absolute top-1 bottom-1 w-9 bg-fuchsia-600 rounded-md transition-all duration-300 ease-out"
+              style={{ left: `${4 + LANGUAGES.indexOf(selectedLang) * 36}px` }}
+            />
+            {LANGUAGES.map((lang) => (
+              <button
+                key={lang}
+                onClick={() => setSelectedLang(lang)}
+                className={`relative z-10 w-9 text-xs font-bold py-1.5 rounded-md transition-colors duration-300 cursor-pointer ${selectedLang === lang
+                    ? 'text-white'
+                    : 'text-slate-400 hover:text-slate-200'
+                  }`}
+              >
+                {lang}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="space-y-4">
           <AIPromptHelper onSelectPrompt={(text) => setQuery(text)} showcaseCharacters={detailedRoster} />
 
-          <div>
+          <div className="relative">
             <label className="block text-sm font-medium text-slate-400 mb-1">
               Votre objectif (ex: "Team Freeze pour Ayaka")
             </label>
             <textarea
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white h-32 focus:ring-2 focus:ring-purple-500 focus:outline-none resize-none placeholder-slate-600 disabled:opacity-50"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 pr-10 text-white h-32 focus:ring-2 focus:ring-purple-500 focus:outline-none resize-none placeholder-slate-600 disabled:opacity-50"
               placeholder="Décrivez ce que vous cherchez..."
               disabled={isGenerating}
             />
+            <div className="group absolute top-[2.1rem] right-2.5">
+              <button type="button" className="p-0.5 rounded-full text-slate-500 hover:text-slate-300 transition-colors" tabIndex={-1}>
+                <HelpCircle className="w-4 h-4" />
+              </button>
+              <div className="absolute bottom-full mb-2 left-1/2 -translate-x-4 w-56 p-2.5 rounded-md bg-slate-900 border border-slate-700 shadow-lg text-xs text-slate-200 leading-relaxed opacity-0 pointer-events-none scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 z-50">
+                L'IA analyse automatiquement les vraies statistiques, armes et artéfacts de vos personnages synchronisés en vitrine pour générer ses réponses. Les résultats seront traduits dans la langue choisie (FR/EN...).
+              </div>
+            </div>
           </div>
 
           {error && (

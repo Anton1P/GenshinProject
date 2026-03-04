@@ -125,7 +125,8 @@ export const useGemini = () => {
       setTeamsResult(result);
     } catch (err: any) {
       console.error("Erreur lors de la génération:", err);
-      setError(err.message || "Une erreur est survenue lors de la communication avec Gemini.");
+      const errorMessage = err instanceof Error ? err.message : (err?.message || "Une erreur inattendue s'est produite.");
+      setError(errorMessage);
     } finally {
       setIsGenerating(false);
     }
@@ -156,7 +157,8 @@ export const useGemini = () => {
       return details;
     } catch (err: any) {
       console.error("Erreur détails:", err);
-      setError(err.message || "Erreur lors de la récupération des builds.");
+      const errorMessage = err instanceof Error ? err.message : (err?.message || "Une erreur inattendue s'est produite.");
+      setError(errorMessage);
       return null;
     } finally {
       setIsLoadingDetails(false);
@@ -183,7 +185,8 @@ export const useGemini = () => {
       setAuditResult(result);
     } catch (err: any) {
       console.error("Erreur audit:", err);
-      setError(err.message || "Erreur lors de l'audit.");
+      const errorMessage = err instanceof Error ? err.message : (err?.message || "Une erreur inattendue s'est produite.");
+      setError(errorMessage);
     } finally {
       setIsAuditing(false);
     }

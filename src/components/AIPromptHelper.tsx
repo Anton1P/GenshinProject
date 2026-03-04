@@ -7,60 +7,41 @@ interface AIPromptHelperProps {
     showcaseCharacters: Character[];
 }
 
-// ─── Static Quick Prompts ──────────────────────────────────────────
-const STATIC_PROMPTS = [
-    "🛡️ Équipe Survie / Soin",
-    "🌍 Meilleure team Exploration",
-    "❄️ Créer une team Freeze",
-    "🔥 Team Vaporize optimale",
-    "⚡ Team Aggravate / Quicken",
-    "💎 Meilleure team Mono-élément",
-    "🌱 Team Burgeon / Bloom",
-    "⚔️ Meilleure team Hypercarry",
-];
-
 const AIPromptHelper: React.FC<AIPromptHelperProps> = ({ onSelectPrompt, showcaseCharacters }) => {
-    // ── Contextual suggestions based on showcase ──
-    const combinedPrompts = useMemo(() => {
-        const dynamic: string[] = [];
+    // ── Generate one suggestion per valid showcase character ──
+    const suggestions = useMemo(() => {
+        if (!showcaseCharacters || showcaseCharacters.length === 0) return [];
 
-        // Filter characters that have weapon or artifacts (i.e. actually built)
-        const builtShowcase = showcaseCharacters.filter(
-            (c: any) => c.weapon || (c.artifacts && c.artifacts.length > 0)
-        );
-
-        // Sort by level descending, take top 2
-        const topChars = [...builtShowcase]
-            .sort((a: any, b: any) => (b.level ?? 0) - (a.level ?? 0))
-            .slice(0, 2);
-
-        topChars.forEach((char) => {
-            dynamic.push(`✨ Meilleure équipe pour ${char.name}`);
-        });
-
-        // Merge: dynamic first, then static
-        return [...dynamic, ...STATIC_PROMPTS];
+        return showcaseCharacters
+            .filter((c: any) => c.name)
+            .map((char) => ({
+                label: `✨ Team ${char.name}`,
+                payload: `Make the best team for ${char.name}`,
+            }));
     }, [showcaseCharacters]);
 
+    // Nothing to show if no characters
+    if (suggestions.length === 0) return null;
+
     return (
-        <div className="mb-4">
-            <div className="flex items-center gap-2 mb-2.5">
-                <Zap className="w-3.5 h-3.5 text-amber-400" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+        <div className="mb-3">
+            <div className="flex items-center gap-1.5 mb-1.5">
+                <Zap className="w-3 h-3 text-amber-400" />
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                     Suggestions
                 </span>
             </div>
-            <div className="flex flex-wrap gap-2">
-                {combinedPrompts.map((prompt) => (
+            <div className="flex flex-wrap gap-1.5">
+                {suggestions.map(({ label, payload }) => (
                     <button
-                        key={prompt}
-                        onClick={() => onSelectPrompt(prompt)}
-                        className="px-3 py-1.5 text-xs font-medium rounded-full
-                       bg-slate-800/70 border border-slate-700/50 text-slate-300
-                       hover:bg-purple-500/20 hover:border-purple-500/40 hover:text-purple-200
-                       transition-all duration-200 cursor-pointer"
+                        key={label}
+                        onClick={() => onSelectPrompt(payload)}
+                        className="px-2.5 py-1 text-xs rounded-full
+                       border border-slate-700 bg-slate-800/50 text-slate-300
+                       hover:bg-slate-700 hover:text-slate-100
+                       transition-colors cursor-pointer whitespace-nowrap"
                     >
-                        {prompt}
+                        {label}
                     </button>
                 ))}
             </div>

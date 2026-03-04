@@ -13,6 +13,7 @@ interface TeamDetailsModalProps {
   getCharacterIcon: (name: string) => string | null | undefined;
   onSaveBuild: (build: BuildResponse) => void;
   isBuildSaved: boolean;
+  error?: string | null;
 }
 
 export const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
@@ -24,7 +25,8 @@ export const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
   onClose,
   getCharacterIcon,
   onSaveBuild,
-  isBuildSaved
+  isBuildSaved,
+  error
 }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
@@ -44,15 +46,14 @@ export const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
                 className="p-2 hover:bg-white/10 rounded-full transition-colors"
                 title={isBuildSaved ? "Build sauvegardé" : "Sauvegarder ce build"}
               >
-                <Star 
-                  className={`w-6 h-6 transition-colors ${
-                    isBuildSaved ? "text-yellow-400 fill-yellow-400" : "text-slate-400 hover:text-yellow-400"
-                  }`} 
+                <Star
+                  className={`w-6 h-6 transition-colors ${isBuildSaved ? "text-yellow-400 fill-yellow-400" : "text-slate-400 hover:text-yellow-400"
+                    }`}
                 />
               </button>
             )}
           </div>
-          <button 
+          <button
             onClick={onClose}
             className="p-2 hover:bg-white/10 rounded-full transition-colors"
           >
@@ -67,7 +68,7 @@ export const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
               <Loader2 className="w-12 h-12 text-purple-500 animate-spin" />
               <p className="text-slate-300 font-medium animate-pulse">{loadingPhrase}</p>
               <div className="w-64 bg-slate-800 rounded-full h-2 overflow-hidden mt-4">
-                <div 
+                <div
                   className="bg-gradient-to-r from-blue-500 to-purple-500 h-full transition-all duration-300 ease-out"
                   style={{ width: `${progress}%` }}
                 />
@@ -102,7 +103,7 @@ export const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
                           const weaponUrl = getAssetUrl(weapon.name);
                           let borderColor = 'border-slate-600';
                           let textColor = 'text-slate-300';
-                          
+
                           if (weapon.rarity === 5) {
                             borderColor = 'border-yellow-500/50';
                             textColor = 'text-yellow-200';
@@ -113,7 +114,7 @@ export const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
                             borderColor = 'border-blue-500/50';
                             textColor = 'text-blue-300';
                           }
-                          
+
                           return weaponUrl ? (
                             <div key={wIdx} className={`flex items-center gap-2 p-1.5 rounded bg-slate-900/50 border ${borderColor}`}>
                               <img src={weaponUrl} alt={weapon.name} className="w-8 h-8 rounded bg-slate-800 object-cover" />
@@ -191,7 +192,7 @@ export const TeamDetailsModal: React.FC<TeamDetailsModalProps> = ({
             </div>
           ) : (
             <div className="text-center text-red-400 p-8">
-              Impossible de charger les détails. Veuillez réessayer.
+              {error || "Impossible de charger les détails. Veuillez réessayer."}
             </div>
           )}
         </div>

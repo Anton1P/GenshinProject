@@ -320,6 +320,7 @@ function App() {
           getCharacterIcon={getCharacterIcon}
           onSaveBuild={(build) => favorites.saveBuildToTeam(selectedTeam, build)}
           isBuildSaved={favorites.isBuildFavorited(selectedTeam.name)}
+          error={gemini.error}
         />
       )}
 

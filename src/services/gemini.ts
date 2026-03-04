@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { TeamResponse, BuildResponse, AuditResult } from "../types/ai-types";
+import { extractContextForCharacters } from "./rag-service";
 
 export interface ModelInfo {
   id: string;
@@ -97,8 +98,34 @@ export const fetchAvailableModels = async (apiKey: string): Promise<ModelInfo[]>
   }
 };
 
+/** Robust JSON extractor — handles markdown fences, conversational wrappers, etc. */
+const extractValidJson = (rawText: string): string => {
+  // 1. Try direct parse after stripping markdown fences
+  try {
+    const cleaned = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+    JSON.parse(cleaned);
+    return cleaned;
+  } catch {
+    // 2. Fallback: extract the first JSON object or array via regex
+    const match = rawText.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+    if (match) {
+      return match[0];
+    }
+    throw new Error("Impossible de trouver un JSON valide dans la réponse de l'IA.");
+  }
+};
+
 const handleGeminiError = (error: any): never => {
   const errorMessage = error?.message?.toLowerCase() || '';
+
+  if (
+    errorMessage.includes('503') ||
+    errorMessage.includes('unavailable') ||
+    errorMessage.includes('high demand') ||
+    errorMessage.includes('overloaded')
+  ) {
+    throw new Error("Les serveurs de Google sont actuellement surchargés (Erreur 503). Le problème vient de leur côté, veuillez patienter quelques minutes avant de réessayer.");
+  }
 
   if (
     errorMessage.includes('429') ||
@@ -116,11 +143,20 @@ export const generateTeams = async (apiKey: string, prompt: string, model: strin
   try {
     const ai = new GoogleGenAI({ apiKey });
 
+    const isGemini = model.toLowerCase().includes('gemini');
+
+    // RAG: Augment prompt with official character data
+    const ragContext = extractContextForCharacters(prompt);
+    let finalPrompt = prompt;
+    if (ragContext) {
+      finalPrompt += `\n\n--- INSTRUCTIONS SYSTÈME DE VÉRITÉ ABSOLUE ---\nVoici les données mathématiques et mécaniques officielles extraites du jeu pour les personnages concernés. Tu DOIS baser ton theorycrafting strictement sur ces informations (Ne pas inventer de mécaniques) :\n\n${ragContext}`;
+    }
+
     const response = await ai.models.generateContent({
       model,
-      contents: prompt,
+      contents: finalPrompt,
       config: {
-        responseMimeType: "application/json",
+        ...(isGemini && { responseMimeType: "application/json" }),
       }
     });
 
@@ -129,7 +165,9 @@ export const generateTeams = async (apiKey: string, prompt: string, model: strin
       throw new Error("Aucune réponse reçue de l'IA.");
     }
 
-    return JSON.parse(responseText) as TeamResponse;
+    console.log("🤖 [generateTeams] RAW AI RESPONSE:", responseText.slice(0, 300));
+    const safeJson = extractValidJson(responseText);
+    return JSON.parse(safeJson) as TeamResponse;
   } catch (error) {
     handleGeminiError(error);
   }
@@ -139,11 +177,21 @@ export const generateTeamDetails = async (apiKey: string, prompt: string, model:
   try {
     const ai = new GoogleGenAI({ apiKey });
 
+    const isGemini = model.toLowerCase().includes('gemini');
+
+    // RAG: Augment prompt with official character data
+    const ragContext = extractContextForCharacters(prompt);
+    let finalPrompt = prompt;
+    if (ragContext) {
+      finalPrompt += `\n\n--- INSTRUCTIONS SYSTÈME DE VÉRITÉ ABSOLUE ---\nVoici les données mathématiques et mécaniques officielles extraites du jeu pour les personnages concernés. Tu DOIS baser ton theorycrafting strictement sur ces informations (Ne pas inventer de mécaniques) :\n\n${ragContext}`;
+    }
+    finalPrompt += `\n\nRÈGLE ABSOLUE : Tu DOIS répondre UNIQUEMENT avec l'objet JSON. N'écris AUCUN texte avant, AUCUN texte après. Ton premier caractère doit être '{' et ton dernier '}'.`;
+
     const response = await ai.models.generateContent({
       model,
-      contents: prompt,
+      contents: finalPrompt,
       config: {
-        responseMimeType: "application/json",
+        ...(isGemini && { responseMimeType: "application/json" }),
       }
     });
 
@@ -152,7 +200,9 @@ export const generateTeamDetails = async (apiKey: string, prompt: string, model:
       throw new Error("Pas de réponse pour les détails.");
     }
 
-    return JSON.parse(responseText) as BuildResponse;
+    console.log("🤖 [generateTeamDetails] RAW AI RESPONSE:", responseText.slice(0, 300));
+    const safeJson = extractValidJson(responseText);
+    return JSON.parse(safeJson) as BuildResponse;
   } catch (error) {
     handleGeminiError(error);
     throw error;
@@ -265,11 +315,14 @@ Règles :
 4. Sois sévère mais juste sur les scores.`;
     }
 
+    const effectiveModel = model || 'gemini-2.5-flash';
+    const isGemini = effectiveModel.toLowerCase().includes('gemini');
+
     const response = await ai.models.generateContent({
-      model: model || 'gemini-2.5-flash',
+      model: effectiveModel,
       contents: prompt,
       config: {
-        responseMimeType: "application/json",
+        ...(isGemini && { responseMimeType: "application/json" }),
       }
     });
 
@@ -278,7 +331,9 @@ Règles :
       throw new Error("Pas de réponse de l'audit.");
     }
 
-    return JSON.parse(responseText) as AuditResult;
+    console.log("🤖 [generateCharacterAudit] RAW AI RESPONSE:", responseText.slice(0, 300));
+    const safeJson = extractValidJson(responseText);
+    return JSON.parse(safeJson) as AuditResult;
   } catch (error) {
     handleGeminiError(error);
     throw error;
