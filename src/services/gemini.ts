@@ -145,11 +145,11 @@ export const generateTeams = async (apiKey: string, prompt: string, model: strin
 
     const isGemini = model.toLowerCase().includes('gemini');
 
-    // RAG: Augment prompt with official character data
+    // RAG: Augment prompt with official character data and theorycrafting
     const ragContext = extractContextForCharacters(prompt);
     let finalPrompt = prompt;
     if (ragContext) {
-      finalPrompt += `\n\n--- INSTRUCTIONS SYSTÈME DE VÉRITÉ ABSOLUE ---\nVoici les données mathématiques et mécaniques officielles extraites du jeu pour les personnages concernés. Tu DOIS baser ton theorycrafting strictement sur ces informations (Ne pas inventer de mécaniques) :\n\n${ragContext}`;
+      finalPrompt += `\n\n--- INSTRUCTIONS SYSTÈME DE VÉRITÉ ABSOLUE ---\nVoici les recommandations de theorycrafting de la communauté (La Gazette de Teyvat) et les données officielles pour t'aider à construire les équipes :\n${JSON.stringify(ragContext, null, 2)}\nUtilise les synergies mentionnées et prends en compte les 'pros' et 'cons' pour justifier tes choix dans l'explication 'Pourquoi ça marche'.`;
     }
 
     const response = await ai.models.generateContent({
@@ -179,11 +179,22 @@ export const generateTeamDetails = async (apiKey: string, prompt: string, model:
 
     const isGemini = model.toLowerCase().includes('gemini');
 
-    // RAG: Augment prompt with official character data
+    // RAG: Augment prompt with official character data and theorycrafting
     const ragContext = extractContextForCharacters(prompt);
     let finalPrompt = prompt;
     if (ragContext) {
-      finalPrompt += `\n\n--- INSTRUCTIONS SYSTÈME DE VÉRITÉ ABSOLUE ---\nVoici les données mathématiques et mécaniques officielles extraites du jeu pour les personnages concernés. Tu DOIS baser ton theorycrafting strictement sur ces informations (Ne pas inventer de mécaniques) :\n\n${ragContext}`;
+      const teamContext = Object.keys(ragContext.stats).map(charName => {
+        const db = ragContext.stats[charName];
+        const gazette = ragContext.theorycrafting[charName];
+        return {
+          Personnage: charName,
+          Type_Arme_Obligatoire: db?.weaponType || "Inconnu",
+          Theorycrafting_Gazette: gazette || "Aucune donnée"
+        };
+      });
+      const stringifiedContext = JSON.stringify(teamContext, null, 2);
+
+      finalPrompt += `\n\n--- INSTRUCTIONS SYSTÈME DE VÉRITÉ ABSOLUE ---\nVoici la base de données STRICTE pour les personnages de cette équipe :\n${stringifiedContext}\n\nRÈGLES ABSOLUES ET INFRANGIBLES :\n1. Tu ne peux attribuer qu'une arme correspondant au 'Type_Arme_Obligatoire'.\n2. Tu DOIS piocher les armes et artéfacts UNIQUEMENT dans la section 'Theorycrafting_Gazette' de CE personnage précis. Respecte l'ordre (rank 1, rank 2).\n3. INTERDICTION STRICTE d'inventer des armes (comme Bâton de Homa) si elles ne sont pas écrites dans le JSON du personnage.\n4. INTERDICTION FORMELLE de déduire ou d'inventer les statistiques. Pour les 'Stats Principales' (Sablier, Coupe, Couronne) et les 'Substats Prioritaires', tu DOIS COPIER MOT POUR MOT les valeurs exactes inscrites dans la ligne 'main_stats' et 'sub_stats' du JSON de la Gazette. Ne devine jamais un bonus de dégâts élémentaire s'il n'est pas explicitement écrit.`;
     }
     finalPrompt += `\n\nRÈGLE ABSOLUE : Tu DOIS répondre UNIQUEMENT avec l'objet JSON. N'écris AUCUN texte avant, AUCUN texte après. Ton premier caractère doit être '{' et ton dernier '}'.`;
 
