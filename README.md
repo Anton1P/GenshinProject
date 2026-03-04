@@ -40,36 +40,67 @@ Le service Gemini intègre un intercepteur d'erreurs robuste. Si les serveurs mo
 - Une clé API gratuite [Google Gemini](https://aistudio.google.com/app/apikey)
 
 ### 2. Installation
-Clonez ce dépôt puis installez les dépendances :
+
+**Le double clonage (Crucial) :**
+Pour que le système RAG local fonctionne, vous devez cloner ce projet React, **ET** le dépôt de données brutes juste à côté (dans le même dossier parent).
+
 ```bash
-git clone <votre-url-de-depot>
+# 1. Cloner les données brutes
+git clone https://github.com/dvaJi/genshin-data.git
+
+# 2. Cloner ce projet
+git clone <votre-url-de-depot> GenshinProject
 cd GenshinProject
+
+# 3. Installer les dépendances
 npm install
 ```
 
-### 3. Configuration
-Créez un fichier `.env` à la racine de votre projet ou utilisez l'interface applicative (Menu Paramètres) pour renseigner votre clé Gemini.
-Si `.env`, ajoutez :
+**L'arborescence requise :**
+Assurez-vous d'avoir cette structure exacte avant de continuer :
+```text
+📁 Dossier_Global/
+├── 📁 genshin-data/    <-- Dépôt des données brutes
+└── 📁 GenshinProject/  <-- Le projet React
+```
+
+**La génération du RAG :**
+Générez la base de données locale avant le premier lancement :
+```bash
+node scripts/build-rag.js
+```
+*Cela créera le fichier `src/data/rag-database.json` requis par l'IA.*
+
+### 3. Configuration et Lancement
+
+Créez un fichier `.env` à la racine de `GenshinProject` pour renseigner votre clé Gemini :
 ```env
 VITE_GEMINI_API_KEY=votre_cle_api_ici
 ```
+*(Vous pourrez aussi la saisir directement dans l'interface de l'application).*
 
-### 4. Démarrage du serveur de développement
+Démarrez ensuite le serveur de développement :
 ```bash
 npm run dev
 ```
-Rendez-vous sur [http://localhost:5173](http://localhost:5173) pour utiliser l'application.
-
+Rendez-vous sur [http://localhost:5173](http://localhost:5173).
 ---
 
 ## 🛠️ Maintenance & Mise à jour (Script RAG)
 À **chaque nouveau patch de Genshin Impact**, de nouveaux personnages sortent. Pour que l'IA reste experte, vous devez mettre à jour la base RAG locale.
-Il vous suffit de lancer notre script Node.js dédié situé dans le dossier `scripts/` :
 
-```bash
-# Génère ou met à jour src/data/rag-database.json de façon performante
-node scripts/build-rag.js
-```
+### Procédure de mise à jour des données :
+1. Récupérez les données du nouveau patch dans le dépôt brut :
+   ```bash
+   cd ../genshin-data
+   git pull
+   cd ../GenshinProject
+   ```
+2. Relancez le script de génération RAG dans votre projet React :
+   ```bash
+   node scripts/build-rag.js
+   ```
+
 *(Note : Ce script convertit les centaines de fichiers JSON lourds contenant le lore et certaines voix du jeu en une base ultra-légère et concentrée sur l'information Theorycraft : Descriptions des talents et passifs nettoyées des balises HTML).*
 
 ---
